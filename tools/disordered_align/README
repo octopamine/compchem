@@ -1,0 +1,16 @@
+Example:
+  ./align_amber_to_vina.py Ligand.pdb Docked.pdbqt 0 > ALIGNED.pdb
+
+Aligns Ligand.pdb to the 0th frame of Docked.pdbqt, despite the fact that the
+atoms in the two files are in different orders AND the PDBQT is missing
+non-polar hydrogen atoms.
+
+Docked.pdbqt is an AutoDockVINA generated docking file.
+Ligand is an AMBER-generated PDB file that we want to align to a docked confirmation.
+#NOTE# They don't have the same number of atoms, and the atoms are in different orders.
+#NOTE# That's the whole point of this script.
+DOCKED.pdb is the 0th frame extracted from Docked.pdbqt for comparison:
+
+* A comparison PRIOR to alignment can be made by viewing Ligand.pdb and DOCKED.pdb.
+* A comparison AFTER alignment can be made by viewing ALIGNED.pdb and DOCKED.pdb
+  + RMSD information is provided in the REMARK section at the top of ALIGNED.pdb
