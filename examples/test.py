@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from compchem import *
+from compchem.pdb import *
 from compchem.view import *
 
 a = load_pdbqt('out-methyl-L-ph.pdbqt')

@@ -5,6 +5,25 @@ import struct #for hex->dec
 import re # regex
 import numpy as np
 import math
+from compchem import *
+
+## Function for loading PDB, PQR, PDBQT
+def load_pdb(filename):
+  if filename.lower().endswith('pdbqt'):
+    return PDB(filename, PDBQT=True)
+  elif filename.lower().endswith('pqr'):
+    return PDB(filename, PQR=True)
+  #else:
+  return PDB(filename)
+
+
+def load_pqr(filename):
+  return PDB(filename, PQR=True)
+
+
+def load_pdbqt(filename):
+  return PDB(filename, PDBQT=True)
+
 
 
 # Single frame from PDB-type file
@@ -71,7 +90,7 @@ class PDB:
     return self.frames[indices]
 
 
-  def parse_int(self, val):
+  def parse_index(self, val):
     # When PDB atom indices or residue IDs get over 9999, it switches to hex
     # This function figures that out, and returns an int
     try:
@@ -80,7 +99,7 @@ class PDB:
       else:
         return int(val)
     except ValueError:
-      print('!! parse_int could not resolve either hex or int from string "%s"' % val)
+      print('!! compchem.pdb.parse_index could not resolve either hex or int from string "%s"' % val)
       return None
       
 
@@ -90,6 +109,7 @@ class PDB:
     _findex = False
     _chain = 'A'
     _fchain = False
+    _coords = []
 
     for i,line in enumerate(open(self.filename)):
       line = line.rstrip()
@@ -112,7 +132,8 @@ class PDB:
         elif record == 'TER':
           _chain = chr(ord(_chain)+1)
         elif record == 'END' or record == 'ENDMDL':
-          self.finalize_frame()
+          self.finalize_frame(_coords)
+          _coords = []
           self.frames.append(self.current_frame)
           self.current_frame = PDBFrame()
         elif record == 'ATOM' or record == 'HETATM':
@@ -123,7 +144,7 @@ class PDB:
             index = _index
             _index += 1
           else:
-            index = self.parse_int(index)
+            index = self.parse_index(index)
           self.current_frame.indices.append(index)
           ## ATOM NAME
           atomn = line[12:16].strip()
@@ -145,7 +166,7 @@ class PDB:
           if resnu == '':
             resnu = None
           else:
-            resnu = self.parse_int(resnu)
+            resnu = self.parse_index(resnu)
           self.current_frame.resids.append(resnu)
           ## X, Y, Z Coordinates
           crdx = line[30:38]
@@ -159,7 +180,7 @@ class PDB:
             crdy = float(crdy)
             crdz = float(crdz)
             extra = line[54:]
-            atom = [crdx, crdy, crdz]
+            atom_crd = [crdx, crdy, crdz]
           except:
             block = line[30:]
             d1 = block.find('.')
@@ -170,8 +191,8 @@ class PDB:
             crdy = float(block[d2-s:d2+s])
             crdz = float(block[d3-s:d3+s])
             extra = block[d3+s:]
-            atom = [crdx, crdy, crdz]
-          self.current_frame.atoms.append(atom)
+            atom_crd = [crdx, crdy, crdz]
+          _coords.append(atom_crd)
           # extra columns beyond coordinates
           if self.PQR or self.PDBQT:
             cols = []
@@ -223,24 +244,24 @@ class PDB:
             self.current_frame.types.append(atomt)
             # no radii, just append a zero (lookup table for generic vdw radii?)
             self.current_frame.radii.append(0.)
-    if self.current_frame.coordinates == None and len(self.current_frame.atoms) > 0:
-      self.finalize_frame()
+    if self.current_frame.coordinates == None and len(_coords) > 0:
+      self.finalize_frame(_coords)
+      _coords = []
       self.frames.append(self.current_frame)
 
     # make some data more accessible
     if len(self.authors) > 0:
       self.authors = [name.strip() for name in self.authors.split(',')]
 
-  def finalize_frame(self):
-    Natoms = len(self.current_frame.atoms)
+  def finalize_frame(self, coords):
+    Natoms = len(coords)
     if Natoms > 0:
       self.current_frame.coordinates = np.zeros((Natoms, 3))
-      for i,atom in enumerate(self.current_frame.atoms):
+      for i,atom in enumerate(coords):
         # store x, y, z data
-        self.current_frame.coordinates[i,0] = self.current_frame.atoms[i][0]
-        self.current_frame.coordinates[i,1] = self.current_frame.atoms[i][1]
-        self.current_frame.coordinates[i,2] = self.current_frame.atoms[i][2]
-      del self.current_frame.atoms
+        self.current_frame.coordinates[i,0] = coords[i][0]
+        self.current_frame.coordinates[i,1] = coords[i][1]
+        self.current_frame.coordinates[i,2] = coords[i][2]
     try: self.journal_string  = self.journal['TITL']
     except KeyError: pass
     try: self.journal_string += '\n' + self.journal['AUTH']

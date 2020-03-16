@@ -6,25 +6,7 @@ import re # regex
 import numpy as np
 import math
 
-from compchem.pdb import *
 
-
-## Function for loading PDB, PQR, PDBQT
-def load_pdb(filename):
-  if filename.lower().endswith('pdbqt'):
-    return PDB(filename, PDBQT=True)
-  elif filename.lower().endswith('pqr'):
-    return PDB(filename, PQR=True)
-  #else:
-  return PDB(filename)
-
-
-def load_pqr(filename):
-  return PDB(filename, PQR=True)
-
-
-def load_pdbqt(filename):
-  return PDB(filename, PDBQT=True)
 
 
 # calculations & manipualtion functions 
@@ -37,9 +19,9 @@ def rmsd(frame1, frame2):
   return round(rms, 3)
 
 
-# Single frame from PDB-type file
+# Single frame representing a single molecular system's 
+#   conformation and properties
 class MolecularFrame:
-  atoms = []
   chains = []
   indices = []
   names = []
@@ -80,6 +62,16 @@ class MolecularFrame:
     z = np.mean(self.coordinates[:,2])
     mean = np.array( (x,y,z) )
     return mean
+
+  def measure_dimensions(self):
+    # find mean of each column of coordinates
+    maxx = np.max(self.coordinates[:,0])
+    maxy = np.max(self.coordinates[:,1])
+    maxz = np.max(self.coordinates[:,2])
+    minx = np.min(self.coordinates[:,0])
+    miny = np.min(self.coordinates[:,1])
+    minz = np.min(self.coordinates[:,2])
+    return np.array( (maxx-minx, maxy-miny, maxz-minz) )
 
   def translate(self, dx, dy, dz):
     # add differential to every row of each column

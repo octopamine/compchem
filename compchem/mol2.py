@@ -8,6 +8,9 @@ import math
 
 
 # Single frame from MOL2-type file
+class MOL2Frame(MolecularFrame):
+  pass
+'''
 class MOL2Frame:
   def __init__(self):
     self.atoms = []
@@ -122,7 +125,7 @@ class MOL2Frame:
       pdb_atoms += 'ATOM  %s  %3s %3s %s %s    %8.3f%8.3f%8.3f  1.00  0.00\n' % (str(self.indices[i]).rjust(5), self.names[i], self.resnames[i], self.chains[i], str(self.resids[i]).rjust(3), self.coordinates[i,0], self.coordinates[i,1], self.coordinates[i,2])
     pdb_atoms += "TER\n"
     return pdb_atoms
-
+'''
 
 
 ## Core MOL2-style Format Parser
@@ -144,7 +147,6 @@ class MOL2:
     self.MOL2QT = MOL2QT
     # parse the file
     self.parse()
-
 
   def __repr__(self):
     filetype = 'MOL2'
